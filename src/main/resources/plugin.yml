@@ -1,0 +1,21 @@
+name: IceBoatElo
+version: '1.0.0'
+main: com.yourserver.iceboatelo.IceBoatElo
+api-version: '1.20'
+description: ELO ranked system for iceboat racing with TimingSystem integration.
+authors:
+  - YourName
+softdepend:
+  - TimingSystem
+commands:
+  elo:
+    description: IceBoat ELO ranked commands
+    usage: /elo <stats|leaderboard|queue|leave|queueinfo|tracks>
+    aliases: [rank, ranked]
+permissions:
+  iceboatelo.admin:
+    description: Access to admin commands
+    default: op
+  iceboatelo.use:
+    description: Access to player commands
+    default: true

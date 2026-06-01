@@ -1,0 +1,41 @@
+# ─────────────────────────────────────────────────
+# IceBoatElo Configuration
+# ─────────────────────────────────────────────────
+
+# Starting ELO for new players
+starting-elo: 800
+
+# Minimum ELO a player can drop to
+minimum-elo: 0
+
+# K-factor: higher = bigger ELO swings. Standard = 32.
+k-factor: 16
+
+# Countdown timer in seconds before a queued race starts
+queue-countdown: 120
+
+# Laps and pit stops for each ranked race
+race-laps: 5
+race-pits: 0
+
+# Ranked track pool — add as many tracks as you want.
+# Track names must match the COMMAND NAME of the track in TimingSystem
+# (the name without spaces, as used in/tt <trackname>)
+# A track will never be picked twice in a row.
+ranked-tracks:
+  - "track_one"
+  - "track_two"
+  - "track_three"
+
+# ─────────────────────────────────────────────────
+# Rank Thresholds
+# Players reach a rank when their ELO meets or exceeds the value.
+# ─────────────────────────────────────────────────
+ranks:
+  Iron:        0
+  Bronze:      500
+  Silver:      1000
+  Gold:        1500
+  Diamond:     2000
+  Master:      2500
+  Grandmaster: 3000
