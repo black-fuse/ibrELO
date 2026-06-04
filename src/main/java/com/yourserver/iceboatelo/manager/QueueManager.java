@@ -5,6 +5,7 @@ import com.yourserver.iceboatelo.model.EloData;
 import lombok.Getter;
 import me.makkuusen.timing.system.TimingSystem;
 import me.makkuusen.timing.system.database.TrackDatabase;
+import me.makkuusen.timing.system.heat.Heat;
 import me.makkuusen.timing.system.track.Track;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -187,6 +188,21 @@ public class QueueManager {
             return;
         }
 
+    }
+
+    // for testing purposes
+    public void forceStart() {
+        if (queue.isEmpty()) {
+            return;
+        }
+
+        if (countdownTask != null) {
+            countdownTask.cancel();
+            countdownTask = null;
+        }
+
+        secondsRemaining = 0;
+        launchRace();
     }
 
     // ─── Track pool ──────────────────────────────────────────────────────

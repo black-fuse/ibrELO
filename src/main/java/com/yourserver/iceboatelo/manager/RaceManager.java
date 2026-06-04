@@ -2,11 +2,13 @@ package com.yourserver.iceboatelo.manager;
 
 import com.yourserver.iceboatelo.model.EloData;
 import lombok.Getter;
+import me.makkuusen.timing.system.ApiUtilities;
 import me.makkuusen.timing.system.api.TimingSystemAPI;
 import me.makkuusen.timing.system.database.EventDatabase;
 import me.makkuusen.timing.system.event.Event;
 import me.makkuusen.timing.system.heat.Heat;
 import me.makkuusen.timing.system.heat.HeatState;
+import me.makkuusen.timing.system.participant.Driver;
 import me.makkuusen.timing.system.round.Round;
 import me.makkuusen.timing.system.round.RoundType;
 import me.makkuusen.timing.system.track.Track;
@@ -28,6 +30,10 @@ public class RaceManager {
     public RaceManager(Plugin plugin, QueueManager queueManager){
         this.plugin = plugin;
         this.queueManager = queueManager;
+    }
+
+    public Boolean isRankedHeat(Heat heat){
+        return activeRankedHeats.contains(heat);
     }
 
     public boolean startRankedRace(Player player, Track track, int laps, int pits, List<UUID> playerList){
@@ -97,6 +103,10 @@ public class RaceManager {
             }
         }
 
+        if (heat.getHeatState() == HeatState.LOADED) {
+            heat.reloadHeat();
+        }
+
         final Heat finalHeat = heat;
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             finalHeat.startCountdown(10);
@@ -112,6 +122,26 @@ public class RaceManager {
 
         activeRankedHeats.add(heat);
         return true;
+    }
+
+    public void countdownTimer(Driver driver,String time){
+        Heat heat = driver.getHeat();
+        Event event = heat.getEvent();
+        int timeLimit = ApiUtilities.parseDurationToMillis(time) / 1000;
+        plugin.getLogger().info("parse duration: " + String.valueOf(timeLimit));
+        event.eventCountdown.startCountdown(timeLimit, "time left");
+
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!heat.isFinished()) {
+                heat.finishHeat();
+            }
+        }, timeLimit * 20L);
+    }
+
+    public void cancelCountdown(Driver driver){
+        Heat heat = driver.getHeat();
+        Event event = heat.getEvent();
+        event.eventCountdown.stopCountdown();
     }
 
     public void endRankedRace(Heat heat){

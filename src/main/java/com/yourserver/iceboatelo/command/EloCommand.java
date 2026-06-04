@@ -4,6 +4,8 @@ import com.yourserver.iceboatelo.IceBoatElo;
 import com.yourserver.iceboatelo.manager.EloManager;
 import com.yourserver.iceboatelo.manager.QueueManager;
 import com.yourserver.iceboatelo.model.EloData;
+import me.makkuusen.timing.system.database.TrackDatabase;
+import me.makkuusen.timing.system.track.Track;
 import org.bukkit.Bukkit;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
@@ -37,6 +39,8 @@ public class EloCommand implements CommandExecutor, TabCompleter {
             case "queueinfo", "qi"            -> handleQueueInfo(sender);
             case "testresult"                 -> handleTestResult(sender, args);
             case "reload"                     -> handleReload(sender);
+            case "track"                      -> handleTrack(sender, args); // yeah i'll maintain the line i guess it looks nice
+            case "forcestart"                 -> handleForceStart(sender);
             default                           -> sendHelp(sender);
         }
         return true;
@@ -209,6 +213,18 @@ public class EloCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(PRE + "§aConfig reloaded.");
     }
 
+    // for testing purposes mostly because i don't wanna wait for every test
+    private void handleForceStart(CommandSender sender){
+        if (!sender.hasPermission("iceboatelo.admin")) {
+            sender.sendMessage(PRE + "§cNo permission.");
+            return;
+        }
+
+        queueManager.forceStart();
+
+        sender.sendMessage(PRE + "§aForced ranked race start.");
+    }
+
     // track pool handling and stuff (i need more sleep)
     private void handleTrack(CommandSender sender, String[] args) {
 
@@ -217,15 +233,38 @@ public class EloCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
+
+        if (args.length < 2){
+            sender.sendMessage(PRE + "§cUsage: /elo track <add|remove|list> [track]");
+            return;
+        }
+        String action = args[1];
+        List<String> tracks = plugin.getConfig().getStringList("ranked-tracks");
+
+        if (action.equalsIgnoreCase("list")) {
+
+            sender.sendMessage(PRE + "§eRanked Tracks:");
+
+            for (String track : tracks) {
+                sender.sendMessage(" §7- §f" + track);
+            }
+            return;
+        }
+
         if (args.length < 3) {
             sender.sendMessage(PRE + "§cUsage: /elo track <add|remove|list> [track]");
             return;
         }
 
-        String action = args[1];
+
         String trackName = args[2];
 
-        List<String> tracks = plugin.getConfig().getStringList("ranked-tracks");
+        Optional<Track> track = TrackDatabase.getTrack(trackName);
+
+        if (track.isEmpty()) {
+            sender.sendMessage(PRE + "§cTrack not found in TimingSystem.");
+            return;
+        }
 
         if (action.equalsIgnoreCase("add")) {
 
@@ -253,14 +292,7 @@ public class EloCommand implements CommandExecutor, TabCompleter {
 
             sender.sendMessage(PRE + "§aRemoved track §e" + trackName + "§a from ranked pool.");
         }
-        else if (action.equalsIgnoreCase("list")) {
 
-            sender.sendMessage(PRE + "§eRanked Tracks:");
-
-            for (String track : tracks) {
-                sender.sendMessage(" §7- §f" + track);
-            }
-        }
         else {
             sender.sendMessage(PRE + "§cUsage: /elo track <add|remove|list> [track]");
         }
@@ -292,12 +324,25 @@ public class EloCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] args) {
         if (args.length == 1) {
             List<String> subs = new ArrayList<>(List.of("info", "top", "queue", "leave", "queueinfo"));
-            if (sender.hasPermission("iceboatelo.admin")) { subs.add("testresult"); subs.add("reload"); }
+            if (sender.hasPermission("iceboatelo.admin")) { subs.add("testresult"); subs.add("reload"); subs.add("track"); subs.add("forcestart");}
             return subs.stream().filter(s -> s.startsWith(args[0].toLowerCase())).collect(Collectors.toList());
         }
         if (args.length >= 2 && (args[0].equalsIgnoreCase("info") || args[0].equalsIgnoreCase("testresult"))) {
             return Bukkit.getOnlinePlayers().stream().map(Player::getName)
                     .filter(n -> n.toLowerCase().startsWith(args[args.length - 1].toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("track")) {
+            return List.of("add", "remove", "list").stream()
+                    .filter(s -> s.startsWith(args[1].toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("track")
+                && args[1].equalsIgnoreCase("remove")) {
+
+            return plugin.getConfig().getStringList("ranked-tracks")
+                    .stream()
+                    .filter(t -> t.toLowerCase().startsWith(args[2].toLowerCase()))
                     .collect(Collectors.toList());
         }
         return Collections.emptyList();
