@@ -41,9 +41,23 @@ public class EloCommand implements CommandExecutor, TabCompleter {
             case "reload"                     -> handleReload(sender);
             case "track"                      -> handleTrack(sender, args); // yeah i'll maintain the line i guess it looks nice
             case "forcestart"                 -> handleForceStart(sender);
+            case "enable"                     -> setRankedEnabled(sender, true);
+            case "disable"                     -> setRankedEnabled(sender, false);
+            case "toggle"                     -> toggleRanked(sender);
             default                           -> sendHelp(sender);
         }
         return true;
+    }
+
+    private void setRankedEnabled(CommandSender sender, Boolean state){
+        plugin.getQueueManager().setEnabled(state);
+        sender.sendMessage(PRE + "Ranked is now " + (state ? "§aenabled" : "§cdisabled"));
+    }
+
+    private void toggleRanked(CommandSender sender){
+        plugin.getQueueManager().toggleEnabled();
+        sender.sendMessage(PRE + "Ranked is now " +
+                (plugin.getQueueManager().isEnabled() ? "§aenabled" : "§cdisabled"));
     }
 
     // ─── /elo info [player] ──────────────────────────────────────────────

@@ -3,9 +3,7 @@ package com.yourserver.iceboatelo.manager;
 import com.yourserver.iceboatelo.IceBoatElo;
 import com.yourserver.iceboatelo.model.EloData;
 import lombok.Getter;
-import me.makkuusen.timing.system.TimingSystem;
 import me.makkuusen.timing.system.database.TrackDatabase;
-import me.makkuusen.timing.system.heat.Heat;
 import me.makkuusen.timing.system.track.Track;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -25,6 +23,7 @@ public class QueueManager {
     private int secondsRemaining = 0;
 
     private boolean rankedRaceActive = false;
+    private boolean enabled = true;
     private List<UUID> currentRankedPlayers = new ArrayList<>();
 
     private String lastTrack = null;
@@ -32,6 +31,19 @@ public class QueueManager {
     public QueueManager(IceBoatElo plugin, EloManager eloManager) {
         this.plugin = plugin;
         this.eloManager = eloManager;
+    }
+
+    // toggle enable, i forgot to do this so im glad i remembered
+    public void toggleEnabled(){
+        enabled = !enabled;
+    }
+
+    public boolean isEnabled(){
+        return enabled;
+    }
+
+    public void setEnabled(Boolean enabled){
+        this.enabled = enabled;
     }
 
     // ─── Queue ───────────────────────────────────────────────────────────
@@ -108,6 +120,11 @@ public class QueueManager {
     // ─── Launch ──────────────────────────────────────────────────────────
 
     private void launchRace() {
+        if (!isEnabled()){
+            broadcast("§cRanked is disabled");
+            return;
+        }
+
         if (queue.isEmpty()) {
             broadcast("§cNo players queued — race cancelled.");
             return;
