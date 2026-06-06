@@ -49,6 +49,10 @@ public class QueueManager {
     // ─── Queue ───────────────────────────────────────────────────────────
 
     public boolean joinQueue(Player player) {
+        if (!isEnabled()){
+            broadcast("§cRanked is disabled");
+            return false;
+        }
         if (queue.contains(player.getUniqueId())) return false;
         if (rankedRaceActive) {
             player.sendMessage("§8[§6Ranked§8] §cA race is already in progress. Wait for it to finish.");
