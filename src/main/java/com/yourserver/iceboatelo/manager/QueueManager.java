@@ -6,9 +6,12 @@ import lombok.Getter;
 import me.makkuusen.timing.system.database.TrackDatabase;
 import me.makkuusen.timing.system.track.Track;
 import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -50,7 +53,7 @@ public class QueueManager {
 
     public boolean joinQueue(Player player) {
         if (!isEnabled()){
-            broadcast("§cRanked is disabled");
+            broadcast("§cRanked is disabled", player);
             return false;
         }
         if (queue.contains(player.getUniqueId())) return false;
@@ -59,7 +62,7 @@ public class QueueManager {
             return false;
         }
         queue.add(player.getUniqueId());
-        broadcast("§a" + player.getName() + " §fjoined the queue. §8(" + queue.size() + " queued)");
+        broadcast("§a" + player.getName() + " §fjoined the queue. §8(" + queue.size() + " queued)", null);
 
         if (queue.size() == 1) {
             startCountdown(plugin.getConfig().getInt("queue-countdown", 120));
@@ -70,7 +73,7 @@ public class QueueManager {
     public boolean leaveQueue(Player player) {
         boolean removed = queue.remove(player.getUniqueId());
         if (!removed) return false;
-        broadcast("§c" + player.getName() + " §fleft the queue. §8(" + queue.size() + " queued)");
+        broadcast("§c" + player.getName() + " §fleft the queue. §8(" + queue.size() + " queued)", player);
         if (queue.isEmpty()) cancelCountdown();
         return true;
     }
@@ -84,7 +87,7 @@ public class QueueManager {
     public void onRaceFinished() {
         rankedRaceActive = false;
         currentRankedPlayers.clear();
-        broadcast("§6Ranked race finished! Type §a/elo queue §6to join the next one.");
+        broadcast("§6Ranked race finished! Type §a/elo queue §6to join the next one.", null);
     }
 
     // ─── Countdown ───────────────────────────────────────────────────────
@@ -92,7 +95,7 @@ public class QueueManager {
     private void startCountdown(int seconds) {
         secondsRemaining = seconds;
         broadcast("§6§l⚡ Ranked race §fstarting in §e" + formatTime(secondsRemaining)
-                + "§f! Type §a/elo queue §fto join.");
+                + "§f! Type §a/elo queue §fto join.", null);
 
         countdownTask = new BukkitRunnable() {
             @Override
@@ -100,7 +103,7 @@ public class QueueManager {
                 secondsRemaining--;
                 if (shouldAnnounce(secondsRemaining)) {
                     broadcast("§6§l⚡ Ranked race §fstarting in §e" + formatTime(secondsRemaining)
-                            + "§f! §8(" + queue.size() + " queued)");
+                            + "§f! §8(" + queue.size() + " queued)", null);
                 }
                 if (secondsRemaining <= 0) {
                     cancel();
@@ -114,7 +117,7 @@ public class QueueManager {
     private void cancelCountdown() {
         if (countdownTask != null) { countdownTask.cancel(); countdownTask = null; }
         secondsRemaining = 0;
-        broadcast("§cQueue cancelled — no players remaining.");
+        broadcast("§cQueue cancelled — no players remaining.", null);
     }
 
     private boolean shouldAnnounce(int s) {
@@ -125,12 +128,12 @@ public class QueueManager {
 
     private void launchRace() {
         if (!isEnabled()){
-            broadcast("§cRanked is disabled");
+            // broadcast("§cRanked is disabled", null);
             return;
         }
 
         if (queue.isEmpty()) {
-            broadcast("§cNo players queued — race cancelled.");
+            // broadcast("§cNo players queued — race cancelled.", null);
             return;
         }
 
@@ -139,13 +142,13 @@ public class QueueManager {
 
         String trackName = pickTrack();
         if (trackName == null) {
-            broadcast("§cNo ranked tracks configured! Add tracks to §eranked-tracks §cin config.yml.");
+            broadcast("§cNo ranked tracks configured! Add tracks to §eranked-tracks §cin config.yml.", null);
             return;
         }
 
         Optional<Track> trackOpt = getTrackByName(trackName);
         if (trackOpt.isEmpty()) {
-            broadcast("§cTrack '§e" + trackName + "§c' not found in TimingSystem! Check the name in config.yml.");
+            broadcast("§cTrack '§e" + trackName + "§c' not found in TimingSystem! Check the name in config.yml.", null);
             return;
         }
 
@@ -156,7 +159,7 @@ public class QueueManager {
                 .findFirst().orElse(null);
 
         if (host == null) {
-            broadcast("§cAll queued players went offline — race cancelled.");
+            broadcast("§cAll queued players went offline — race cancelled.", null);
             return;
         }
 
@@ -171,15 +174,15 @@ public class QueueManager {
         }
 
         if (added < 2) {
-            broadcast("§cNot enough players online to race — cancelling.");
+            broadcast("§cNot enough players online to race — cancelling.", null);
             return;
         }
 
         // Announce
-        broadcast("");
-        broadcast("§8§l▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
-        broadcast("§6§l   ⚡ RANKED RACE STARTING ⚡");
-        broadcast("§7  Track: §e" + trackName + "  §7| Laps: §e" + laps + "  §7| Pits: §e" + pits);
+        broadcast("",null);
+        broadcast("§8§l▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬", null);
+        broadcast("§6§l   ⚡ RANKED RACE STARTING ⚡", null);
+        broadcast("§7  Track: §e" + trackName + "  §7| Laps: §e" + laps + "  §7| Pits: §e" + pits, null);
 
         StringBuilder names = new StringBuilder("§7  Racers: ");
         for (int i = 0; i < players.size(); i++) {
@@ -189,8 +192,8 @@ public class QueueManager {
                  .append(" §8(").append(data.getElo()).append(")");
             if (i < players.size() - 1) names.append("§8, ");
         }
-        broadcast(names.toString());
-        broadcast("§8§l▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
+        broadcast(names.toString(), null);
+        broadcast("§8§l▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬", null);
 
         currentRankedPlayers = new ArrayList<>(players);
         rankedRaceActive = true;
@@ -205,7 +208,7 @@ public class QueueManager {
         );
 
         if (!raceCreated) {
-            broadcast("§cFailed to create ranked race.");
+            broadcast("§cFailed to create ranked race.", null);
             return;
         }
 
@@ -244,8 +247,20 @@ public class QueueManager {
 
     // ─── Helpers ─────────────────────────────────────────────────────────
 
-    private void broadcast(String msg) {
-        Bukkit.broadcastMessage("§8[§6Ranked§8] §r" + msg);
+    private void broadcast(String msg, @Nullable CommandSender fallback) {
+        String formatted = "§8[§6Ranked§8] §r" + msg;
+
+        if (!queue.isEmpty()) {
+            for (UUID uuid : queue) {
+                Player player = Bukkit.getPlayer(uuid);
+                if (player != null) {
+                    player.sendMessage(formatted);
+                }
+            }
+        } else if (fallback != null) {
+            fallback.sendMessage(formatted);
+        }
+        // TODO: carefully look through usages and decide propperly what needs to be public and what not, then refactor acoordingly
     }
 
     private String formatTime(int secs) {
